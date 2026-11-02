@@ -1,3 +1,9 @@
+/// Waits for [Duration]; injected so retries and throttling are instant and
+/// deterministic in tests.
+typedef Sleep = Future<void> Function(Duration duration);
+
+Future<void> realSleep(Duration duration) => Future<void>.delayed(duration);
+
 /// Source of the current instant (RN-15).
 ///
 /// Domain code never calls `DateTime.now()` directly, so time-dependent rules
