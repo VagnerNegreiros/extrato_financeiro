@@ -104,8 +104,7 @@ final class LedgerLocalDataSource {
     final conditions = <Expression<bool>>[
       if (query.direction case final direction?)
         row.direction.equalsValue(direction),
-      if (query.statuses.isNotEmpty)
-        row.status.isIn(query.statuses.map((s) => s.name)),
+      if (query.statuses.isNotEmpty) row.status.isInValues(query.statuses),
       if (query.range case final range?) ...[
         row.occurredAt.isBiggerOrEqualValue(
           range.startUtc.millisecondsSinceEpoch,

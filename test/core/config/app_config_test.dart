@@ -88,6 +88,8 @@ void main() {
 
       expect(config.toString(), isNot(contains('CG-secret-key')));
       expect(config.toString(), contains('<redacted>'));
+      expect(config.toString(), contains('flavor: prod'));
+      expect(config.toString(), contains('fakeFailure: none'));
     });
   });
 }

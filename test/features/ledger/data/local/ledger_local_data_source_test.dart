@@ -6,6 +6,7 @@ import 'package:extrato_financeiro/core/time/calendar_date.dart';
 import 'package:extrato_financeiro/core/time/date_range.dart';
 import 'package:extrato_financeiro/core/time/local_calendar.dart';
 import 'package:extrato_financeiro/features/ledger/data/local/app_database.dart';
+import 'package:extrato_financeiro/features/ledger/data/local/enum_codes.dart';
 import 'package:extrato_financeiro/features/ledger/data/local/ledger_local_data_source.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/transaction.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/transaction_query.dart';
@@ -214,6 +215,39 @@ void main() {
         await local.queryPage(queries['combined']!, limit: 5),
         hasLength(1),
       );
+    });
+  });
+
+  group('stable enum codes (obfuscation-safe)', () {
+    test('every value round-trips through its code', () {
+      for (final value in TransactionDirection.values) {
+        expect(directionCodes.fromSql(directionCodes.toSql(value)), value);
+      }
+      for (final value in TransactionStatus.values) {
+        expect(statusCodes.fromSql(statusCodes.toSql(value)), value);
+      }
+      for (final value in TransactionCategory.values) {
+        expect(categoryCodes.fromSql(categoryCodes.toSql(value)), value);
+      }
+      expect(categoryCodes.toSql(TransactionCategory.cryptoBuy), 'crypto_buy');
+    });
+
+    test('rows are stored with codes, not Dart identifiers', () async {
+      await store([
+        tx(cents: 1, id: 'TX-1', category: TransactionCategory.cryptoSell),
+      ]);
+      final row = await db
+          .customSelect('SELECT category, status FROM transactions')
+          .getSingle();
+      expect(row.data, {'category': 'crypto_sell', 'status': 'completed'});
+    });
+
+    test('an unknown code is reported as a cache failure', () async {
+      await store([tx(cents: 1, id: 'TX-1')]);
+      await db.customStatement(
+        "UPDATE transactions SET status = 'archived' WHERE id = 'TX-1'",
+      );
+      await expectLater(local.findAll(), throwsA(isA<CacheException>()));
     });
   });
 

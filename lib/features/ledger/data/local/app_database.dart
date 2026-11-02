@@ -1,13 +1,14 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:extrato_financeiro/features/ledger/data/local/enum_codes.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/transaction.dart';
 
 part 'app_database.g.dart';
 
 /// Ledger cache: the single source of truth of every screen (RN-24).
 ///
-/// Enums are stored by name, so renaming an enum value requires a
-/// migration. Instants are epoch milliseconds in UTC (RN-10).
+/// Enums are stored as explicit codes (see `enum_codes.dart`), never by
+/// name. Instants are epoch milliseconds in UTC (RN-10).
 @DataClassName('TransactionRow')
 @TableIndex(name: 'idx_tx_occurred', columns: {#occurredAt, #id})
 @TableIndex(name: 'idx_tx_status', columns: {#status})
@@ -22,9 +23,9 @@ class TransactionRows extends Table {
   /// Lower-case, accent-free copy of [description] used by the search.
   TextColumn get descriptionSearch => text()();
   IntColumn get amountCents => integer()();
-  TextColumn get direction => textEnum<TransactionDirection>()();
-  TextColumn get status => textEnum<TransactionStatus>()();
-  TextColumn get category => textEnum<TransactionCategory>()();
+  TextColumn get direction => text().map(directionCodes)();
+  TextColumn get status => text().map(statusCodes)();
+  TextColumn get category => text().map(categoryCodes)();
   IntColumn get occurredAt => integer()();
   TextColumn get assetId => text().nullable()();
   TextColumn get assetSymbol => text().nullable()();

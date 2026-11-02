@@ -57,12 +57,8 @@ final class AppConfig {
     required String coinGeckoApiKey,
     required String fakeFailure,
   }) {
-    final parsedFlavor = _parseEnum(AppFlavor.values, flavor, 'APP_FLAVOR');
-    final parsedFailure = _parseEnum(
-      FakeFailure.values,
-      _normalizeEnumName(fakeFailure),
-      'FAKE_FAILURE',
-    );
+    final parsedFlavor = _lookup(_flavors, flavor, 'APP_FLAVOR');
+    final parsedFailure = _lookup(_failures, fakeFailure, 'FAKE_FAILURE');
 
     final uri = Uri.tryParse(coinGeckoBaseUrl.trim());
     if (uri == null || !uri.hasAuthority) {
@@ -96,24 +92,31 @@ final class AppConfig {
 
   bool get usesFakeData => flavor == AppFlavor.dev;
 
+  // Explicit codes instead of `Enum.name`: release builds are obfuscated and
+  // identifier names are not guaranteed to survive.
+  static const Map<String, AppFlavor> _flavors = {
+    'dev': AppFlavor.dev,
+    'prod': AppFlavor.prod,
+  };
+  static const Map<String, FakeFailure> _failures = {
+    'none': FakeFailure.none,
+    'network': FakeFailure.network,
+    'rate_limit': FakeFailure.rateLimit,
+    'server': FakeFailure.server,
+  };
+
   // Never expose the API key, even in debug output.
   @override
   String toString() =>
-      'AppConfig(flavor: ${flavor.name}, baseUri: $coinGeckoBaseUri, '
+      'AppConfig(flavor: ${_codeOf(_flavors, flavor)}, '
+      'baseUri: $coinGeckoBaseUri, '
       'apiKey: ${coinGeckoApiKey.isEmpty ? '<empty>' : '<redacted>'}, '
-      'fakeFailure: ${fakeFailure.name})';
+      'fakeFailure: ${_codeOf(_failures, fakeFailure)})';
 
-  static T _parseEnum<T extends Enum>(List<T> values, String raw, String key) {
-    final name = raw.trim();
-    for (final value in values) {
-      if (value.name == name) return value;
-    }
-    throw InvalidConfigException('Invalid $key: "$raw".');
-  }
+  static T _lookup<T>(Map<String, T> codes, String raw, String key) =>
+      codes[raw.trim()] ??
+      (throw InvalidConfigException('Invalid $key: "$raw".'));
 
-  // Accepts snake_case values from the env file (rate_limit -> rateLimit).
-  static String _normalizeEnumName(String raw) => raw.trim().replaceAllMapped(
-    RegExp('_([a-z])'),
-    (match) => match.group(1)!.toUpperCase(),
-  );
+  static String _codeOf<T>(Map<String, T> codes, T value) =>
+      codes.entries.firstWhere((entry) => entry.value == value).key;
 }

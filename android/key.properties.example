@@ -1,0 +1,7 @@
+# Copy to android/key.properties (git-ignored) to sign release builds with
+# your own keystore. Generate one with:
+#   keytool -genkey -v -keystore ~/fluxo-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias fluxo
+storeFile=/absolute/path/to/fluxo-release.jks
+storePassword=CHANGE_ME
+keyAlias=fluxo
+keyPassword=CHANGE_ME
