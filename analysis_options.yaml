@@ -14,6 +14,8 @@ analyzer:
   errors:
     # Missing docs on every public member is noise for an app (not a library).
     public_member_api_docs: ignore
+    # Android/iOS only: ints are 64-bit, which money in cents relies on.
+    avoid_js_rounded_ints: ignore
 
 linter:
   rules:
