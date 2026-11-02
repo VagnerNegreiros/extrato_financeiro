@@ -16,4 +16,16 @@ abstract class MarketQuote with _$MarketQuote {
     /// Percent change in the last 24 hours, when provided.
     Decimal? change24hPercent,
   }) = _MarketQuote;
+
+  const new _();
+
+  /// Percent change from [reference] (e.g. the trade's unit price) to the
+  /// current price, exact to 4 decimal places; `null` for a zero reference.
+  Decimal? changeSincePercent(Money reference) {
+    if (reference.isZero) return null;
+    final ratio =
+        (price.toDecimal() - reference.toDecimal()) / reference.toDecimal();
+    return (ratio.toDecimal(scaleOnInfinitePrecision: 8) * Decimal.fromInt(100))
+        .round(scale: 4);
+  }
 }

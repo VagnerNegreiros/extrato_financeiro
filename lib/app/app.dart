@@ -5,6 +5,7 @@ import 'package:extrato_financeiro/app/router.dart';
 import 'package:extrato_financeiro/app/theme/app_theme.dart';
 import 'package:extrato_financeiro/features/dashboard/presentation/dashboard_view.dart';
 import 'package:extrato_financeiro/features/statement/presentation/statement_view.dart';
+import 'package:extrato_financeiro/features/transaction_details/presentation/transaction_details_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +15,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final router = createRouter(
     dashboard: (_) => const DashboardView(),
     statement: (_) => const StatementView(),
-    details: (_, id) => _Placeholder('Transação $id'),
+    details: (_, id) => TransactionDetailsView(id: id),
   );
   ref.onDispose(router.dispose);
   return router;
@@ -60,14 +61,4 @@ class _FluxoAppState extends ConsumerState<FluxoApp> {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
     );
   }
-}
-
-class _Placeholder extends StatelessWidget {
-  const new(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) =>
-      Scaffold(appBar: AppBar(title: Text(title)));
 }

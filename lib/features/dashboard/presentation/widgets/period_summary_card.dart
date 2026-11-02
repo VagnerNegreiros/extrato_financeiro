@@ -119,12 +119,13 @@ class _Legend extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.financialColors;
     final style = Theme.of(context).textTheme.labelSmall;
+    // Flexible text keeps the legend inside narrow screens and large fonts.
     Widget item(Color color, IconData icon, String label) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: AppSpacing.xs),
-        Text(label, style: style),
+        Flexible(child: Text(label, style: style)),
       ],
     );
 
@@ -132,17 +133,14 @@ class _Legend extends StatelessWidget {
       child: Wrap(
         alignment: WrapAlignment.center,
         spacing: AppSpacing.lg,
+        runSpacing: AppSpacing.xs,
         children: [
           item(
             colors.credit,
             TransactionDirection.credit.icon,
-            'Entradas (barra à esquerda)',
+            'Entradas (esq.)',
           ),
-          item(
-            colors.debit,
-            TransactionDirection.debit.icon,
-            'Saídas (barra à direita)',
-          ),
+          item(colors.debit, TransactionDirection.debit.icon, 'Saídas (dir.)'),
         ],
       ),
     );
