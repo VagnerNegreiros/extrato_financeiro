@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
 
 concurrency:
@@ -104,6 +105,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: quality
     timeout-minutes: 30
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -124,15 +127,24 @@ jobs:
       - name: Generate code
         run: dart run build_runner build
 
-      # CI builds the dev flavor (local fixtures), so no secret is needed.
+      # With the COINGECKO_API_KEY secret the APK uses the live API (prod);
+      # without it (forks, first runs) it falls back to the offline dev data.
       - name: Prepare build configuration
-        run: cp config/env.example.json config/ci.json
+        env:
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+        run: |
+          if [ -n "$COINGECKO_API_KEY" ]; then
+            printf '{"APP_FLAVOR":"prod","COINGECKO_BASE_URL":"https://api.coingecko.com/api/v3","COINGECKO_API_KEY":"%s","FAKE_FAILURE":"none"}' "$COINGECKO_API_KEY" > config/ci.json
+          else
+            cp config/env.example.json config/ci.json
+          fi
 
       - name: Build obfuscated release APK
         run: >
           flutter build apk --release
           --obfuscate
           --split-debug-info=build/symbols
+          --extra-gen-snapshot-options=--strip
           --dart-define-from-file=config/ci.json
 
       - name: Upload APK
@@ -146,3 +158,11 @@ jobs:
         with:
           name: debug-symbols
           path: build/symbols
+
+      # Tags (v1.0.0) publish the APK as a GitHub Release for QA/evaluators.
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          generate_release_notes: true
