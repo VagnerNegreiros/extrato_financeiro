@@ -4,6 +4,7 @@ import 'package:extrato_financeiro/app/providers.dart';
 import 'package:extrato_financeiro/app/router.dart';
 import 'package:extrato_financeiro/app/theme/app_theme.dart';
 import 'package:extrato_financeiro/features/dashboard/presentation/dashboard_view.dart';
+import 'package:extrato_financeiro/features/statement/presentation/statement_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,7 @@ import 'package:go_router/go_router.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   final router = createRouter(
     dashboard: (_) => const DashboardView(),
-    statement: (_) => const _Placeholder('Extrato'),
+    statement: (_) => const StatementView(),
     details: (_, id) => _Placeholder('Transação $id'),
   );
   ref.onDispose(router.dispose);

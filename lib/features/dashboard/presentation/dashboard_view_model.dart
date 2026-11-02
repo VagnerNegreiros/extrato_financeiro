@@ -32,6 +32,10 @@ class DashboardViewModel extends Notifier<DashboardState> {
   }
 
   Future<void> _initialize() async {
+    // The listener only sees changes; pick up a sync state that already
+    // exists (e.g. the view model was recreated after the first sync).
+    final current = ref.read(syncInfoProvider).value;
+    if (current != null) state = state.copyWith(syncInfo: current);
     final visible = await ref.read(balanceVisibilityProvider).load();
     if (!ref.mounted) return;
     state = state.copyWith(isBalanceVisible: visible);
