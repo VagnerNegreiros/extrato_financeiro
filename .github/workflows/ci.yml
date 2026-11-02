@@ -30,7 +30,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate code
-        run: dart run build_runner build --delete-conflicting-outputs
+        run: dart run build_runner build
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
@@ -70,7 +70,7 @@ jobs:
         run: flutter pub get
 
       - name: Generate code
-        run: dart run build_runner build --delete-conflicting-outputs
+        run: dart run build_runner build
 
       # CI builds the dev flavor (local fixtures), so no secret is needed.
       - name: Prepare build configuration

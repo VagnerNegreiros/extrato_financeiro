@@ -47,6 +47,10 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
+# Generated code (run build_runner; CI regenerates it)
+*.g.dart
+*.freezed.dart
+
 # Local configuration and secrets (never commit)
 config/*.json
 !config/env.example.json

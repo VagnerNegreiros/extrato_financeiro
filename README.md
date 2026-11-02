@@ -34,7 +34,7 @@ cp config/env.example.json config/dev.json
 
 ```bash
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 flutter run --dart-define-from-file=config/dev.json
 ```
 
