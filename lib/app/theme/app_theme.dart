@@ -31,10 +31,12 @@ final class FinancialColors extends ThemeExtension<FinancialColors> {
     required this.warning,
   });
 
+  // Tones chosen to keep 4.5:1 (WCAG AA) on every surface they appear on,
+  // checked by test/accessibility_test.dart.
   static const light = FinancialColors(
-    credit: Color(0xFF1B7F3B),
+    credit: Color(0xFF156B32),
     debit: Color(0xFFB3261E),
-    completed: Color(0xFF1B7F3B),
+    completed: Color(0xFF156B32),
     pending: Color(0xFF8A5A00),
     failed: Color(0xFFB3261E),
     reversed: Color(0xFF5E5E70),

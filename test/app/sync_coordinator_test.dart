@@ -154,18 +154,14 @@ void main() {
       expect(market.chartCalls, 3);
 
       // Lifecycle states must follow the platform's valid transitions.
-      void backgroundAndReturn() {
-        for (final state in const [
-          AppLifecycleState.inactive,
-          AppLifecycleState.hidden,
-          AppLifecycleState.paused,
-          AppLifecycleState.hidden,
-          AppLifecycleState.inactive,
-          AppLifecycleState.resumed,
-        ]) {
-          tester.binding.handleAppLifecycleStateChanged(state);
-        }
-      }
+      void backgroundAndReturn() => const [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ].forEach(tester.binding.handleAppLifecycleStateChanged);
 
       backgroundAndReturn();
       await settle(tester);
