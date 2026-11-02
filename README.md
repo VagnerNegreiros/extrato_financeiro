@@ -3,7 +3,8 @@
 Aplicativo Flutter para consultar o saldo, visualizar e filtrar as transações de uma conta digital
 que movimenta criptoativos em BRL, usando cotações reais da [CoinGecko](https://www.coingecko.com/en/api).
 
-- **Dashboard:** saldo disponível (com opção de ocultar, lembrada entre sessões), entradas,
+- **Dashboard:** saldo disponível (com opção de ocultar, lembrada entre sessões; para revelar,
+  o app pede biometria ou o bloqueio de tela do aparelho), entradas,
   saídas e resultado do período (7, 30, 90 dias ou personalizado), gráfico de barras e últimas
   transações.
 - **Extrato:** agrupado por dia, filtros combinados (tipo, status, período), busca com debounce,

@@ -91,7 +91,19 @@ class DashboardView extends ConsumerWidget {
             BalanceCard(
               balance: summary.balance,
               isVisible: state.isBalanceVisible,
-              onToggleVisibility: viewModel.toggleBalanceVisibility,
+              onToggleVisibility: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final changed = await viewModel.toggleBalanceVisibility();
+                if (!changed) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Saldo mantido oculto: identidade não confirmada.',
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
             const SizedBox(height: AppSpacing.xl),
             Semantics(

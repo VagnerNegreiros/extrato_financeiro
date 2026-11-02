@@ -1,5 +1,6 @@
 package br.com.fluxo.extrato_financeiro
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// local_auth shows the system biometric prompt, which requires a FragmentActivity.
+class MainActivity : FlutterFragmentActivity()

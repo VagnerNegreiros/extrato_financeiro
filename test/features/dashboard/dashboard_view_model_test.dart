@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:extrato_financeiro/core/money/money.dart';
 import 'package:extrato_financeiro/core/result/failure.dart';
 import 'package:extrato_financeiro/core/result/result.dart';
+import 'package:extrato_financeiro/core/security/biometric_authenticator.dart';
 import 'package:extrato_financeiro/core/time/calendar_date.dart';
 import 'package:extrato_financeiro/features/dashboard/presentation/dashboard_state.dart';
 import 'package:extrato_financeiro/features/dashboard/presentation/dashboard_view_model.dart';
@@ -67,6 +68,58 @@ void main() {
     expect(read().isBalanceVisible, isFalse);
     verify(() => ledger.preferences.setBalanceVisible(visible: false))
         .called(1);
+  });
+
+  group('RN-30: revealing the balance', () {
+    ProviderContainer withBiometrics(BiometricResult result) {
+      ledger = MockedLedger(biometrics: FakeBiometrics(result));
+      when(() => ledger.preferences.isBalanceVisible())
+          .thenAnswer((_) async => const Success(false));
+      when(() => ledger.transactions.getAll())
+          .thenAnswer((_) async => Success(transactions));
+      return container = ledger.container();
+    }
+
+    test('requires authentication when the device supports it', () async {
+      withBiometrics(BiometricResult.denied);
+      await start();
+
+      expect(await viewModel().toggleBalanceVisibility(), isFalse);
+      expect(read().isBalanceVisible, isFalse);
+      verifyNever(
+        () => ledger.preferences.setBalanceVisible(
+          visible: any(named: 'visible'),
+        ),
+      );
+    });
+
+    test('reveals after a successful authentication', () async {
+      withBiometrics(BiometricResult.authenticated);
+      await start();
+
+      expect(await viewModel().toggleBalanceVisibility(), isTrue);
+      expect(read().isBalanceVisible, isTrue);
+      verify(() => ledger.preferences.setBalanceVisible(visible: true))
+          .called(1);
+    });
+
+    test('reveals directly on devices without a lock screen', () async {
+      withBiometrics(BiometricResult.unavailable);
+      await start();
+
+      expect(await viewModel().toggleBalanceVisibility(), isTrue);
+      expect(read().isBalanceVisible, isTrue);
+    });
+
+    test('hiding never asks for authentication', () async {
+      withBiometrics(BiometricResult.denied);
+      when(() => ledger.preferences.isBalanceVisible())
+          .thenAnswer((_) async => const Success(true));
+      await start();
+
+      expect(await viewModel().toggleBalanceVisibility(), isTrue);
+      expect(read().isBalanceVisible, isFalse);
+    });
   });
 
   test('changing the period reloads; stale results are discarded', () async {

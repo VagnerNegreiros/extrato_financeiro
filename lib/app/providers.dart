@@ -5,6 +5,7 @@ import 'package:extrato_financeiro/core/connectivity/connectivity_service.dart';
 import 'package:extrato_financeiro/core/logging/app_logger.dart';
 import 'package:extrato_financeiro/core/money/money_formatter.dart';
 import 'package:extrato_financeiro/core/network/dio_factory.dart';
+import 'package:extrato_financeiro/core/security/biometric_authenticator.dart';
 import 'package:extrato_financeiro/core/time/clock.dart';
 import 'package:extrato_financeiro/core/time/date_formatter.dart';
 import 'package:extrato_financeiro/core/time/local_calendar.dart';
@@ -54,6 +55,10 @@ final localCalendarProvider = Provider<LocalCalendar>(
 );
 
 final loggerProvider = Provider<AppLogger>((ref) => const AppLogger());
+
+final biometricAuthenticatorProvider = Provider<BiometricAuthenticator>(
+  (ref) => LocalAuthBiometricAuthenticator(),
+);
 
 final connectivityProvider = Provider<ConnectivityService>(
   (ref) => ref.watch(appConfigProvider).usesFakeData

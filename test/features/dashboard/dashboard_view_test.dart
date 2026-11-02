@@ -5,6 +5,7 @@ import 'package:extrato_financeiro/app/providers.dart';
 import 'package:extrato_financeiro/core/config/app_config.dart';
 import 'package:extrato_financeiro/core/money/money_formatter.dart';
 import 'package:extrato_financeiro/core/result/result.dart';
+import 'package:extrato_financeiro/core/security/biometric_authenticator.dart';
 import 'package:extrato_financeiro/core/time/clock.dart';
 import 'package:extrato_financeiro/features/ledger/data/datasources/fake_market_data_source.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/sync_info.dart';
@@ -61,6 +62,24 @@ void main() {
     expect(find.byTooltip('Exibir saldo'), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool(PreferencesRepositoryImpl.balanceVisibleKey), isFalse);
+  });
+
+  testWidgets('RN-30: failed authentication keeps the balance hidden', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      await appTestOverrides(
+        biometrics: const FakeBiometrics(BiometricResult.denied),
+        preferences: {PreferencesRepositoryImpl.balanceVisibleKey: false},
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Exibir saldo'));
+    await tester.pump();
+
+    expect(find.byTooltip('Exibir saldo'), findsOneWidget);
+    expect(find.textContaining('identidade não confirmada'), findsOneWidget);
   });
 
   testWidgets('starts hidden when the preference says so', (tester) async {

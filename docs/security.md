@@ -12,6 +12,7 @@ Riscos considerados (referência: OWASP MASVS) e o que foi feito.
 | Entrada do usuário | Busca: trim, 2–50 caracteres, `%` e `_` escapados no `LIKE`; período personalizado validado (RN-18); ID do ativo validado contra *path injection* | — |
 | Respostas maliciosas ou corrompidas | Parsing defensivo, sem `dynamic` solto, invariantes na entidade `Transaction` | Testes de contrato com o backend |
 | Engenharia reversa | `--obfuscate --split-debug-info` (Dart) + R8 `minify`/`shrinkResources` (Java/Kotlin); enums persistidos com códigos explícitos (nomes ofuscados não quebram o banco) | Root/jailbreak detection, FLAG_SECURE nas telas de saldo |
+| Saldo visto por terceiros com o aparelho desbloqueado | Ocultar é imediato; revelar exige biometria ou o PIN/padrão do aparelho (`local_auth`); falhas do plugin mantêm o saldo oculto (*fail closed*); sem bloqueio de tela configurado, revela direto | Bloqueio do app inteiro após inatividade |
 | Dados sensíveis em armazenamento | Nada sensível é salvo: só o cache do extrato simulado e a preferência de ocultar saldo | `flutter_secure_storage` para tokens quando houver login |
 
 ## Build de release

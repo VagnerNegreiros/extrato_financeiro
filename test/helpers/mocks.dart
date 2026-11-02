@@ -4,6 +4,7 @@ import 'package:extrato_financeiro/app/providers.dart';
 import 'package:extrato_financeiro/core/connectivity/connectivity_service.dart';
 import 'package:extrato_financeiro/core/logging/app_logger.dart';
 import 'package:extrato_financeiro/core/result/result.dart';
+import 'package:extrato_financeiro/core/security/biometric_authenticator.dart';
 import 'package:extrato_financeiro/core/time/clock.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/sync_info.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/transaction_query.dart';
@@ -30,7 +31,10 @@ void registerDomainFallbacks() {
 /// Mocked repositories plus a controllable sync stream, for ViewModel tests
 /// that need precise control over timing and results.
 final class MockedLedger {
-  new({Clock? clock}) : clock = clock ?? FixedClock(testNow) {
+  new({
+    Clock? clock,
+    this.biometrics = const FakeBiometrics(BiometricResult.unavailable),
+  }) : clock = clock ?? FixedClock(testNow) {
     when(transactions.watchSyncInfo).thenAnswer((_) => syncInfo.stream);
     when(() => transactions.sync(force: any(named: 'force'))).thenAnswer(
       (_) async => Success(SyncInfo(lastSuccessAt: this.clock.nowUtc())),
@@ -42,6 +46,7 @@ final class MockedLedger {
   }
 
   final Clock clock;
+  final BiometricAuthenticator biometrics;
   final transactions = MockTransactionRepository();
   final preferences = MockPreferencesRepository();
   final quotes = MockMarketQuoteRepository();
@@ -60,6 +65,7 @@ final class MockedLedger {
     localCalendarProvider.overrideWithValue(testCalendar),
     loggerProvider.overrideWithValue(const AppLogger(enabled: false)),
     connectivityProvider.overrideWithValue(const AlwaysOnlineConnectivity()),
+    biometricAuthenticatorProvider.overrideWithValue(biometrics),
   ];
 
   ProviderContainer container() => ProviderContainer.test(overrides: overrides);

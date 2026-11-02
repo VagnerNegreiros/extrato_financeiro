@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:extrato_financeiro/app/providers.dart';
 import 'package:extrato_financeiro/core/result/result.dart';
+import 'package:extrato_financeiro/core/security/biometric_authenticator.dart';
 import 'package:extrato_financeiro/features/dashboard/presentation/dashboard_state.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/period_selection.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/sync_info.dart';
@@ -48,11 +49,21 @@ class DashboardViewModel extends Notifier<DashboardState> {
     await _load();
   }
 
-  /// RN-29: the choice is applied at once and persisted for next sessions.
-  Future<void> toggleBalanceVisibility() async {
+  /// RN-29/30: hiding is immediate; revealing asks for biometrics (or the
+  /// device lock) when the device has one. The choice is persisted.
+  ///
+  /// Returns `false` when the user did not confirm their identity.
+  Future<bool> toggleBalanceVisibility() async {
     final visible = !state.isBalanceVisible;
+    if (visible) {
+      final result = await ref
+          .read(biometricAuthenticatorProvider)
+          .authenticate(reason: 'Confirme sua identidade para exibir o saldo');
+      if (!ref.mounted || result == BiometricResult.denied) return false;
+    }
     state = state.copyWith(isBalanceVisible: visible);
     await ref.read(balanceVisibilityProvider).save(visible: visible);
+    return true;
   }
 
   /// Pull-to-refresh. The returned result lets the view report a failure

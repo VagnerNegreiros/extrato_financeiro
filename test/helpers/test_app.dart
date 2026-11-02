@@ -3,6 +3,7 @@ import 'package:extrato_financeiro/app/providers.dart';
 import 'package:extrato_financeiro/core/config/app_config.dart';
 import 'package:extrato_financeiro/core/connectivity/connectivity_service.dart';
 import 'package:extrato_financeiro/core/logging/app_logger.dart';
+import 'package:extrato_financeiro/core/security/biometric_authenticator.dart';
 import 'package:extrato_financeiro/core/time/clock.dart';
 import 'package:extrato_financeiro/core/time/local_calendar.dart';
 import 'package:extrato_financeiro/features/ledger/data/datasources/market_data_source.dart';
@@ -14,6 +15,17 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_market.dart';
+
+/// Biometric prompt with a fixed answer.
+final class FakeBiometrics implements BiometricAuthenticator {
+  const new(this.result);
+
+  final BiometricResult result;
+
+  @override
+  Future<BiometricResult> authenticate({required String reason}) async =>
+      result;
+}
 
 /// UTC-3, like Brasília, independent of the machine running the tests.
 final testCalendar = OffsetLocalCalendar.fixed(const Duration(hours: -3));
@@ -32,6 +44,9 @@ Future<List<Override>> appTestOverrides({
   Clock? clock,
   MarketDataSource? market,
   ConnectivityService connectivity = const AlwaysOnlineConnectivity(),
+  BiometricAuthenticator biometrics = const FakeBiometrics(
+    BiometricResult.unavailable,
+  ),
   Map<String, Object> preferences = const {},
 }) async {
   SharedPreferences.setMockInitialValues(preferences);
@@ -56,6 +71,7 @@ Future<List<Override>> appTestOverrides({
     localCalendarProvider.overrideWithValue(testCalendar),
     loggerProvider.overrideWithValue(const AppLogger(enabled: false)),
     connectivityProvider.overrideWithValue(connectivity),
+    biometricAuthenticatorProvider.overrideWithValue(biometrics),
     marketDataSourceProvider.overrideWithValue(
       market ?? instantFakeMarket(effectiveClock),
     ),
