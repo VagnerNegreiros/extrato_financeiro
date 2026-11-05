@@ -52,6 +52,14 @@ final class MockedLedger {
   final quotes = MockMarketQuoteRepository();
   final syncInfo = StreamController<SyncInfo>.broadcast();
 
+  /// Cache already synced and nothing on the dashboard, for tests of the
+  /// screens opened from it.
+  void stubSyncedCache() {
+    when(transactions.getAll).thenAnswer((_) async => const Success([]));
+    when(transactions.watchSyncInfo)
+        .thenAnswer((_) => Stream.value(SyncInfo(lastSuccessAt: testNow)));
+  }
+
   /// Only the repositories, to combine with `appTestOverrides`.
   List<Override> get repositoryOverrides => [
     transactionRepositoryProvider.overrideWithValue(transactions),

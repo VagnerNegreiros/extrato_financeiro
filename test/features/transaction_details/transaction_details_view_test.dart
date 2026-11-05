@@ -3,28 +3,41 @@ import 'dart:async';
 import 'package:extrato_financeiro/app/app.dart';
 import 'package:extrato_financeiro/app/providers.dart';
 import 'package:extrato_financeiro/app/router.dart';
+import 'package:extrato_financeiro/core/result/failure.dart';
+import 'package:extrato_financeiro/core/result/result.dart';
 import 'package:extrato_financeiro/features/ledger/domain/entities/transaction.dart';
 import 'package:extrato_financeiro/features/statement/presentation/statement_view.dart';
 import 'package:extrato_financeiro/features/transaction_details/presentation/transaction_details_view.dart';
 import 'package:extrato_financeiro/shared/widgets/amount_text.dart';
+import 'package:extrato_financeiro/shared/widgets/state_views.dart';
 import 'package:extrato_financeiro/shared/widgets/transaction_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
+import '../../helpers/mocks.dart';
 import '../../helpers/test_app.dart';
+import '../../helpers/transaction_builder.dart';
 
 void main() {
-  setUpAll(initTestLocale);
+  setUpAll(() async {
+    await initTestLocale();
+    registerDomainFallbacks();
+  });
 
-  Future<ProviderContainer> pumpApp(WidgetTester tester) async {
+  Future<ProviderContainer> pumpApp(
+    WidgetTester tester, {
+    List<Override>? overrides,
+  }) async {
     // Tall viewport so the whole details list is built at once.
     tester.view.physicalSize = const Size(1080, 4000);
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: await appTestOverrides(),
+        overrides: overrides ?? await appTestOverrides(),
         child: const FluxoApp(),
       ),
     );
@@ -162,5 +175,68 @@ void main() {
     await tester.tap(find.text('Voltar'));
     await settle(tester);
     expect(find.text('Saldo disponível'), findsOneWidget);
+  });
+
+  /// Opens the details of [id] over a synced cache answered by [load].
+  Future<MockedLedger> openWithMockedCache(
+    WidgetTester tester,
+    String id,
+    Future<Result<Transaction>> Function() load,
+  ) async {
+    final ledger = MockedLedger()..stubSyncedCache();
+    when(() => ledger.transactions.getById(id)).thenAnswer((_) => load());
+    final container = await pumpApp(
+      tester,
+      overrides: [...await appTestOverrides(), ...ledger.repositoryOverrides],
+    );
+    unawaited(
+      container
+          .read(routerProvider)
+          .pushNamed(AppRoute.transactionDetails, pathParameters: {'id': id}),
+    );
+    await settle(tester);
+    return ledger;
+  }
+
+  testWidgets('shows a skeleton while the transaction loads', (tester) async {
+    final transaction = credit(1000);
+    final gate = Completer<Result<Transaction>>();
+    final ledger = await openWithMockedCache(
+      tester,
+      transaction.id,
+      () => gate.future,
+    );
+
+    expect(inDetails(find.byType(LoadingView)), findsOneWidget);
+    expect(inDetails(find.text(transaction.id)), findsNothing);
+
+    gate.complete(Success(transaction));
+    await settle(tester);
+
+    expect(inDetails(find.byType(LoadingView)), findsNothing);
+    expect(inDetails(find.text(transaction.id)), findsOneWidget);
+    await ledger.dispose();
+  });
+
+  testWidgets('a failed read explains the error and can be retried', (
+    tester,
+  ) async {
+    final transaction = credit(1000);
+    var failing = true;
+    final ledger = await openWithMockedCache(
+      tester,
+      transaction.id,
+      () async => failing ? const Err(CacheFailure()) : Success(transaction),
+    );
+
+    expect(inDetails(find.text('Erro ao ler os dados')), findsOneWidget);
+
+    failing = false;
+    await tester.tap(inDetails(find.text('Tentar novamente')));
+    await settle(tester);
+
+    expect(inDetails(find.text('Erro ao ler os dados')), findsNothing);
+    expect(inDetails(find.text(transaction.id)), findsOneWidget);
+    await ledger.dispose();
   });
 }

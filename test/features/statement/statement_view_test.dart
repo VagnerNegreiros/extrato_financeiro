@@ -3,17 +3,24 @@ import 'dart:async';
 import 'package:extrato_financeiro/app/app.dart';
 import 'package:extrato_financeiro/app/router.dart';
 import 'package:extrato_financeiro/core/config/app_config.dart';
+import 'package:extrato_financeiro/core/result/failure.dart';
+import 'package:extrato_financeiro/core/result/result.dart';
 import 'package:extrato_financeiro/core/time/clock.dart';
+import 'package:extrato_financeiro/features/ledger/domain/entities/transaction_query.dart';
 import 'package:extrato_financeiro/features/statement/presentation/statement_view.dart';
 import 'package:extrato_financeiro/features/statement/presentation/statement_view_model.dart';
+import 'package:extrato_financeiro/shared/widgets/state_views.dart';
 import 'package:extrato_financeiro/shared/widgets/transaction_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/fake_market.dart';
+import '../../helpers/mocks.dart';
 import '../../helpers/test_app.dart';
+import '../../helpers/transaction_builder.dart';
 
 /// The dashboard stays mounted below the statement, so finders are scoped.
 Finder inStatement(Type type) => find.descendant(
@@ -22,7 +29,25 @@ Finder inStatement(Type type) => find.descendant(
 );
 
 void main() {
-  setUpAll(initTestLocale);
+  setUpAll(() async {
+    await initTestLocale();
+    registerDomainFallbacks();
+  });
+
+  /// Synced cache whose statement pages are answered by [page].
+  MockedLedger ledgerWithPages(
+    Future<Result<TransactionPage>> Function() page,
+  ) {
+    final ledger = MockedLedger()..stubSyncedCache();
+    when(
+      () => ledger.transactions.getPage(
+        any(),
+        cursor: any(named: 'cursor'),
+        pageSize: any(named: 'pageSize'),
+      ),
+    ).thenAnswer((_) => page());
+    return ledger;
+  }
 
   /// Opens the app directly on the statement.
   Future<ProviderContainer> pumpStatement(
@@ -181,5 +206,65 @@ void main() {
     );
 
     expect(find.text('Sem conexão'), findsWidgets);
+  });
+
+  testWidgets('shows a skeleton while the first page loads', (tester) async {
+    final gate = Completer<Result<TransactionPage>>();
+    final ledger = ledgerWithPages(() => gate.future);
+    await pumpStatement(
+      tester,
+      overrides: [...await appTestOverrides(), ...ledger.repositoryOverrides],
+    );
+
+    expect(inStatement(LoadingView), findsOneWidget);
+    expect(inStatement(TransactionTile), findsNothing);
+
+    gate.complete(Success(TransactionPage(items: [credit(1000)])));
+    await settle(tester);
+
+    expect(inStatement(LoadingView), findsNothing);
+    expect(inStatement(TransactionTile), findsOneWidget);
+    await ledger.dispose();
+  });
+
+  testWidgets('synced without transactions shows the empty state', (
+    tester,
+  ) async {
+    final ledger = ledgerWithPages(
+      () async => const Success(TransactionPage(items: [])),
+    );
+    await pumpStatement(
+      tester,
+      overrides: [...await appTestOverrides(), ...ledger.repositoryOverrides],
+    );
+
+    expect(find.text('Nenhuma transação'), findsOneWidget);
+    expect(find.text('Limpar filtros'), findsNothing);
+    await ledger.dispose();
+  });
+
+  testWidgets('a failed first page explains the error and can be retried', (
+    tester,
+  ) async {
+    var failing = true;
+    final ledger = ledgerWithPages(
+      () async => failing
+          ? const Err(CacheFailure())
+          : Success(TransactionPage(items: [credit(1000)])),
+    );
+    await pumpStatement(
+      tester,
+      overrides: [...await appTestOverrides(), ...ledger.repositoryOverrides],
+    );
+
+    expect(find.text('Erro ao ler os dados'), findsOneWidget);
+
+    failing = false;
+    await tester.tap(find.text('Tentar novamente'));
+    await settle(tester);
+
+    expect(find.text('Erro ao ler os dados'), findsNothing);
+    expect(inStatement(TransactionTile), findsOneWidget);
+    await ledger.dispose();
   });
 }
