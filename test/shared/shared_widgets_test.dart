@@ -133,6 +133,41 @@ void main() {
       final text = tester.widget<Text>(find.textContaining(r'R$'));
       expect(text.style?.decoration, TextDecoration.lineThrough);
     });
+
+    testWidgets('amounts and statuses line up on the right edge', (
+      tester,
+    ) async {
+      // Wider than a phone: the test font is wider than the real one, and at
+      // 360dp its status label alone would fill the column.
+      tester.view
+        ..physicalSize = const Size(600, 800)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: await appTestOverrides(),
+          child: _wrap(
+            Column(
+              children: [
+                TransactionTile(debit(100)),
+                TransactionTile(credit(1234567890)),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      const rightEdge = 600 - AppSpacing.lg;
+      for (final type in [AmountText, StatusChip]) {
+        for (final element in find.byType(type).evaluate()) {
+          expect(
+            tester.getTopRight(find.byWidget(element.widget)).dx,
+            moreOrLessEquals(rightEdge, epsilon: 1),
+            reason: '$type',
+          );
+        }
+      }
+    });
   });
 
   group('state views', () {

@@ -91,7 +91,12 @@ class TransactionTile extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Flexible(
+              // Only as wide as its content, so the amounts line up on the
+              // right edge; the cap keeps room for the text with large fonts.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.4,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
