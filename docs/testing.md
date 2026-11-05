@@ -39,7 +39,14 @@ HTML como artefato.
 - **Migrações de banco:** só existe a versão 1 do schema; o primeiro `onUpgrade` virá com testes
   gerados por `drift_dev schema dump`.
 - **Golden tests:** renderização difere entre Windows/Linux; adiados para rodar só no CI Linux.
-- **Sincronização contra a API real:** não roda no CI (quota e instabilidade); coberta pela
-  fixture real e validada manualmente com o flavor `prod`.
-- **`PluginConnectivityService` e `AppDatabase.open`:** adaptadores finos sobre plugins nativos,
-  exercitados apenas no teste de integração.
+- **Sincronização contra a API real:** não roda no CI (quota e instabilidade). O parsing usa uma
+  resposta real da CoinGecko como fixture e a rede é testada com a pilha Dio e um adapter
+  roteirizado, mas o fluxo completo com uma chave real (flavor `prod`) ainda não foi executado.
+- **Plugins nativos reais:** `PluginConnectivityService`, `AppDatabase.open` (banco em disco),
+  `shared_preferences` e `local_auth` não têm teste automatizado no aparelho. Nos testes, inclusive
+  no de integração, são substituídos por conectividade fixa, banco em memória, preferências de
+  teste e biometria falsa. `LocalAuthBiometricAuthenticator` tem teste unitário com o plugin
+  simulado. Esses caminhos dependem de verificação manual em um aparelho.
+- **APK de release:** o CI gera o build ofuscado, mas nenhum teste automatizado o executa. O teste
+  de integração roda em modo debug, então o efeito de `--obfuscate` e do R8 em tempo de execução
+  também depende de verificação manual.

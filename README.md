@@ -89,10 +89,14 @@ flutter test integration_test --dart-define-from-file=config/env.example.json
 
 ## Gerar o APK de release
 
+O APK pronto para instalar está no [GitHub Release](https://github.com/VagnerNegreiros/extrato_financeiro/releases/latest).
+Para gerar localmente, sem precisar de chave de API:
+
 ```bash
-flutter build apk --release --obfuscate --split-debug-info=build/symbols --extra-gen-snapshot-options=--strip --dart-define-from-file=config/prod.json
+flutter build apk --release --obfuscate --split-debug-info=build/symbols --extra-gen-snapshot-options=--strip --dart-define-from-file=config/dev.json
 ```
 
+- Para usar a API real, troque por `config/prod.json` (veja [Configuração](#configuração)).
 - Saída: `build/app/outputs/flutter-apk/app-release.apk` (universal). Para APKs menores por
   arquitetura, acrescente `--split-per-abi` (arm64 ≈ 20 MB; o universal tem ~58 MB porque leva
   as bibliotecas nativas de 3 arquiteturas sem compressão, para carregamento por `mmap`).
